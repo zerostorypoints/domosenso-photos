@@ -12,7 +12,7 @@ The integration fills a folder. Showing the photos (which one is drawn next, rot
 is the job of a slideshow that reads that folder, for example the Ramka component of
 [DomoSenso](https://github.com/zerostorypoints/domosenso).
 
-**Version 0.1.0 is a pending release. Requires Home Assistant 2026.9.2 or newer.**
+**Version 0.1.0. Requires Home Assistant 2026.9.2 or newer.**
 
 ---
 
