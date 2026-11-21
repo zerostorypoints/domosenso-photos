@@ -15,11 +15,24 @@ from homeassistant import bootstrap, loader
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import ServiceValidationError, Unauthorized
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import frame as ha_frame
 from homeassistant.helpers.storage import Store
 import voluptuous as vol  # after homeassistant: HA maps voluptuous to probatio, whose errors services raise
 
 if not os.environ.get('ALBUMS_SMOKE_DEBUG'):
     logging.disable(logging.CRITICAL)
+
+# HA's usage reports (e.g. closing an HA-managed aiohttp session) are only logged; record them.
+REPORTS = []
+_report_usage = ha_frame.report_usage
+
+
+def _record_usage(what, *args, **kwargs):
+    REPORTS.append(str(what))
+    return _report_usage(what, *args, **kwargs)
+
+
+ha_frame.report_usage = _record_usage
 
 DOMAIN = 'domosenso_photos'
 PASSPHRASE, PASSWORD = 'TestShare1', 'pw'
@@ -237,6 +250,8 @@ async def main():
         async def check_sensor():
             await hass.async_block_till_done()
             check(sensor_count() == len(manager().albums), f'sensor {sensor_count()} != {len(manager().albums)} albums')
+            shown = hass.states.get('sensor.domosenso_photos_albums').attributes.get('albums')
+            check(shown == manager().public_list(), f'sensor albums stale: {shown} != {manager().public_list()}')
 
         await check_sensor()
         check(sensor_count() == 0, 'sensor not 0 before albums')
@@ -351,7 +366,7 @@ async def main():
             check(GPS_IFD not in exif and not exif.get_ifd(GPS_IFD), 'HEIC GPS kept')
         check(tree(hand) == hand_before, 'hand folder changed')
         check(issues.async_get_issue(DOMAIN, f'album_{aid}_path_collision') is not None, 'path collision issue missing')
-        check(fake.agents == {'domosenso-photos/0.1.0'}, f'unexpected User-Agent {fake.agents}')
+        check(fake.agents == {'domosenso-photos/0.1.1'}, f'unexpected User-Agent {fake.agents}')
         await check_sensor()
         check(sensor_count() == 2, 'sensor not 2 after two adds')
 
@@ -519,6 +534,7 @@ async def main():
         await hass.async_block_till_done()
         check(not store_path.exists(), 'album store kept after entry removal')
         check(tree(hand) == hand_before, 'entry removal touched the hand folder')
+        check(not REPORTS, f'HA usage reports: {REPORTS}')
         print(json.dumps({'config_flow': 'ok', 'options': 'ok', 'pillow_heif': 'installed-by-entry',
                           'sync': 'ok', 'holds': 'ok', 'errors': 'ok', 'lifecycle': 'ok'}))
     finally:

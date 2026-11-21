@@ -152,7 +152,7 @@ class AlbumsManager:
                     await asyncio.sleep(0.2)
         except TimeoutError:
             _LOGGER.warning('Album sync still running after %s s', UNLOAD_WAIT_S)
-        await self.session.close()
+        # The session was created during entry setup, so HA detaches it when the entry unloads.
 
     def public(self, rec: AlbumRecord) -> dict:
         lock = self.locks.get(rec['id'])
@@ -247,12 +247,15 @@ class AlbumsManager:
         if lock.locked():
             rec = self.albums.get(album_id)
             return {**rec, 'status': 'syncing'} if rec else None
-        async with lock:
-            if self.albums.get(album_id) is None:
-                return None
-            async_dispatcher_send(self.hass, SIGNAL)  # shown as syncing while it waits its turn
-            async with self.one_sync:
-                return await self._sync_body(album_id, confirm)
+        try:
+            async with lock:
+                if self.albums.get(album_id) is None:
+                    return None
+                async_dispatcher_send(self.hass, SIGNAL)  # shown as syncing while it waits its turn
+                async with self.one_sync:
+                    return await self._sync_body(album_id, confirm)
+        finally:
+            async_dispatcher_send(self.hass, SIGNAL)  # the lock is free: show the final status
 
     async def _sync_body(self, album_id: str, confirm: bool) -> AlbumRecord | None:
         rec = self.albums.get(album_id)

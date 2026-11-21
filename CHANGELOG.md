@@ -1,5 +1,12 @@
 # Changes
 
+## 0.1.1 — 2026-11-21
+
+- The albums sensor no longer keeps showing `syncing` after a sync finishes: it is updated again
+  once the album's lock is released.
+- The integration no longer closes Home Assistant's managed aiohttp session on unload (HA logged
+  a warning); HA detaches it with the entry.
+
 ## 0.1.0 — 2026-11-21
 
 - Sync shared Synology Photos albums into a photo folder for a slideshow. Each album is added by

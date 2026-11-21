@@ -12,7 +12,7 @@ The integration fills a folder. Showing the photos (which one is drawn next, rot
 is the job of a slideshow that reads that folder, for example the Ramka component of
 [DomoSenso](https://github.com/zerostorypoints/domosenso).
 
-**Version 0.1.0. Requires Home Assistant 2026.9.2 or newer.**
+**Version 0.1.1. Requires Home Assistant 2026.9.2 or newer.**
 
 ---
 
@@ -247,7 +247,7 @@ image update the next setup installs it again and needs network access for that.
   Links with a user name or password in the URL are refused.
 - One entry, and so one photo folder, per Home Assistant.
 - Transport timeouts are 30 s to connect, 60 s without data and 15 minutes per request; responses
-  over 200 MB are refused. Requests identify as `domosenso-photos/0.1.0`.
+  over 200 MB are refused. Requests identify as `domosenso-photos/0.1.1`.
 - The share-link API is undocumented; a DSM update can change it.
 
 ## Uninstall

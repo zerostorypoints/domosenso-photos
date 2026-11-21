@@ -120,7 +120,7 @@ def test_every_call_sends_user_agent():
         return t.calls
     calls = asyncio.run(run())
     assert len(calls) == 5
-    assert all(call['headers']['User-Agent'] == 'domosenso-photos/0.1.0' for call in calls)
+    assert all(call['headers']['User-Agent'] == 'domosenso-photos/0.1.1' for call in calls)
 
 
 def test_wrong_password_raises_auth_failed():
