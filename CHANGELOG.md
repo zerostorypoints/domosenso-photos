@@ -1,6 +1,6 @@
 # Changes
 
-## 0.1.0 — pending release
+## 0.1.0 — 2026-11-21
 
 - Sync shared Synology Photos albums into a photo folder for a slideshow. Each album is added by
   its share link; photos are converted to screen-sized JPEG files (HEIC supported through
