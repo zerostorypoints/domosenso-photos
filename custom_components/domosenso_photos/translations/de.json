@@ -79,7 +79,7 @@
       "share_error": "Die erste Synchronisierung dieses Albums ist fehlgeschlagen. Prüfen Sie den Link, den Fotoordner und den freien Speicherplatz und versuchen Sie es erneut."
     },
     "abort": {
-      "not_loaded": "Der Eintrag der Alben ist nicht geladen. Laden Sie ihn neu und versuchen Sie es erneut.",
+      "not_loaded": "DomoSenso Photos ist nicht geladen. Laden Sie die Integration neu und versuchen Sie es erneut.",
       "no_albums": "Es wurden noch keine Alben hinzugefügt."
     }
   },

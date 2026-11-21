@@ -79,7 +79,7 @@
       "share_error": "Pierwsza synchronizacja tego albumu się nie powiodła. Sprawdź link, folder zdjęć i wolne miejsce na dysku, a potem spróbuj ponownie."
     },
     "abort": {
-      "not_loaded": "Wpis albumów nie jest załadowany. Przeładuj go i spróbuj ponownie.",
+      "not_loaded": "DomoSenso Photos nie jest załadowana. Przeładuj integrację i spróbuj ponownie.",
       "no_albums": "Nie dodano jeszcze żadnego albumu."
     }
   },

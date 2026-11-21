@@ -1,7 +1,8 @@
 """Isolated HA smoke for album sync against a fake Synology Photos share server.
 
 Runs inside the official HA image (see README.md, Development). All values are fictional.
-With ALBUMS_SMOKE_OFFLINE=1 (and `docker run --network none`) it checks instead that the entry
+With ALBUMS_SMOKE_OFFLINE=1 (on a `docker network create --internal` network; `--network none`
+leaves HA without a client session) it checks instead that the entry
 loads when pillow-heif cannot be installed, and that HEIC then uses thumbnails.
 """
 import asyncio, importlib, importlib.util, io, json, logging, os, secrets, traceback
@@ -180,6 +181,8 @@ async def main():
     try:
         config = {'http': {'server_host': '127.0.0.1', 'server_port': 8123}}
         check(await bootstrap.async_from_config_dict(config, hass), 'HA bootstrap failed')
+        importlib.invalidate_caches()
+        check(importlib.util.find_spec('pillow_heif') is None, 'pillow_heif present before the entry is set up')
         albums = importlib.import_module(f'custom_components.{DOMAIN}.albums')
         albums.STARTUP_DELAY_S = 3600  # the startup sync is exercised on its own below
         issues = ir.async_get(hass)

@@ -79,7 +79,7 @@
       "share_error": "The first sync of this album failed. Check the link, the photo folder and the free disk space, then try again."
     },
     "abort": {
-      "not_loaded": "The albums entry is not loaded. Reload it and try again.",
+      "not_loaded": "DomoSenso Photos is not loaded. Reload the integration and try again.",
       "no_albums": "No albums have been added yet."
     }
   },
