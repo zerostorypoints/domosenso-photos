@@ -100,4 +100,6 @@ class AlbumsOptionsFlow(config_entries.OptionsFlow):
             vol.Required('free_floor_gb',default=opts['free_floor']/1e9):_number(0.1,1000,0.1,'GB'),
             vol.Optional('host_map',description={'suggested_value':format_host_map(opts['host_map'])}):selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
         })
-        return self.async_show_form(step_id='settings',data_schema=self.add_suggested_values_to_schema(schema,user_input) if user_input else schema,errors=errors)
+        # hassfest refuses URLs inside translation strings; the example origin comes in as a placeholder.
+        return self.async_show_form(step_id='settings',data_schema=self.add_suggested_values_to_schema(schema,user_input) if user_input else schema,errors=errors,
+                                    description_placeholders={'example_origin':'https://photos.example.com'})

@@ -58,7 +58,7 @@
       },
       "settings": {
         "title": "Album settings",
-        "description": "Host map lines read `from -> to`, each an origin such as https://photos.example.com, to reach the share host by another address (for example on the local network). Redirects are not followed: map to the address that answers directly, for example the https address if http redirects there.",
+        "description": "Host map lines read `from -> to`, each an origin such as {example_origin}, to reach the share host by another address (for example on the local network). Redirects are not followed: map to the address that answers directly, for example the https address if http redirects there.",
         "data": {
           "interval_min": "Sync interval",
           "max_edge": "Longest edge",

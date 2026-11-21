@@ -58,7 +58,7 @@
       },
       "settings": {
         "title": "Ustawienia albumów",
-        "description": "Wiersze mapy hostów mają postać `z -> do`, każda strona to sam adres źródłowy, np. https://photos.example.com, aby łączyć się z hostem udostępniania pod innym adresem (na przykład w sieci lokalnej). Przekierowania nie są obsługiwane: wskaż adres, który odpowiada bezpośrednio, na przykład adres https, jeśli http tam przekierowuje.",
+        "description": "Wiersze mapy hostów mają postać `z -> do`, każda strona to sam adres źródłowy, np. {example_origin}, aby łączyć się z hostem udostępniania pod innym adresem (na przykład w sieci lokalnej). Przekierowania nie są obsługiwane: wskaż adres, który odpowiada bezpośrednio, na przykład adres https, jeśli http tam przekierowuje.",
         "data": {
           "interval_min": "Odstęp synchronizacji",
           "max_edge": "Najdłuższa krawędź",

@@ -58,7 +58,7 @@
       },
       "settings": {
         "title": "Album-Einstellungen",
-        "description": "Zeilen der Host-Zuordnung lauten `von -> nach`, jeweils ein Ursprung wie https://photos.example.com, um den Freigabe-Host über eine andere Adresse zu erreichen (zum Beispiel im lokalen Netz). Weiterleitungen werden nicht befolgt: Ordnen Sie die Adresse zu, die direkt antwortet, zum Beispiel die https-Adresse, wenn http dorthin weiterleitet.",
+        "description": "Zeilen der Host-Zuordnung lauten `von -> nach`, jeweils ein Ursprung wie {example_origin}, um den Freigabe-Host über eine andere Adresse zu erreichen (zum Beispiel im lokalen Netz). Weiterleitungen werden nicht befolgt: Ordnen Sie die Adresse zu, die direkt antwortet, zum Beispiel die https-Adresse, wenn http dorthin weiterleitet.",
         "data": {
           "interval_min": "Synchronisierungsintervall",
           "max_edge": "Längste Kante",
