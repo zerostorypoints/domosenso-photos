@@ -1,0 +1,15 @@
+{
+  "domain": "domosenso_photos",
+  "name": "DomoSenso Photos",
+  "codeowners": ["@piotr-dziubecki"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/zerostorypoints/domosenso-photos",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/zerostorypoints/domosenso-photos/issues",
+  "loggers": ["custom_components.domosenso_photos"],
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}
