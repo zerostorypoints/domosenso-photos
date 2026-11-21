@@ -1,5 +1,9 @@
 # Changes
 
+## 0.1.2 — 2026-11-21
+
+- Own brand icon (a photo frame), with dark variants and @2x sizes, in place of the Frame icon.
+
 ## 0.1.1 — 2026-11-21
 
 - The albums sensor no longer keeps showing `syncing` after a sync finishes: it is updated again

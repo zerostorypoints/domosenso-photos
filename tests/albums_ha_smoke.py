@@ -366,7 +366,7 @@ async def main():
             check(GPS_IFD not in exif and not exif.get_ifd(GPS_IFD), 'HEIC GPS kept')
         check(tree(hand) == hand_before, 'hand folder changed')
         check(issues.async_get_issue(DOMAIN, f'album_{aid}_path_collision') is not None, 'path collision issue missing')
-        check(fake.agents == {'domosenso-photos/0.1.1'}, f'unexpected User-Agent {fake.agents}')
+        check(fake.agents == {'domosenso-photos/0.1.2'}, f'unexpected User-Agent {fake.agents}')
         await check_sensor()
         check(sensor_count() == 2, 'sensor not 2 after two adds')
 
