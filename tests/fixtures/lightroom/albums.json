@@ -1,0 +1,9 @@
+{
+  "base": "https://lr.example.org/v2/catalogs/c0ffee/",
+  "resources": [
+    {"id": "set-travel", "subtype": "collection_set", "payload": {"name": "Travel"}},
+    {"id": "set-2024", "subtype": "collection_set", "payload": {"name": "2024", "parent": {"id": "set-travel"}}},
+    {"id": "alb-rome", "subtype": "collection", "payload": {"name": "Rome", "parent": {"id": "set-2024"}}},
+    {"id": "alb-loose", "subtype": "collection", "payload": {"name": "Loose"}}
+  ]
+}

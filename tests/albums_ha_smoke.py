@@ -216,9 +216,12 @@ async def main():
         (hand / 'hand.jpg').write_bytes(jpeg((1, 2, 3)))
         hand_before = tree(hand)
 
-        # Config flow: one step, the photo folder.
+        # Config flow: the kind menu, then one step, the photo folder.
         result = await hass.config_entries.flow.async_init(DOMAIN, context={'source': 'user'})
-        check(result['type'] == 'form' and result['step_id'] == 'user', f'config flow did not start at the user step: {result.get("step_id")}')
+        check(result['type'] == 'menu' and result['step_id'] == 'user' and set(result['menu_options']) == {'albums', 'lightroom'},
+              f'config flow did not start at the kind menu: {result.get("step_id")}')
+        result = await hass.config_entries.flow.async_configure(result['flow_id'], {'next_step_id': 'albums'})
+        check(result['type'] == 'form' and result['step_id'] == 'albums', f'albums step not shown: {result.get("step_id")}')
         result = await hass.config_entries.flow.async_configure(result['flow_id'], {'photo_dir': 'relative/ramka'})
         check(result['type'] == 'form' and result['errors'] == {'photo_dir': 'invalid_photo_dir'}, 'relative photo_dir accepted')
         result = await hass.config_entries.flow.async_configure(result['flow_id'], {'photo_dir': str(photo_dir)})
@@ -236,8 +239,9 @@ async def main():
             check(importlib.util.find_spec('pillow_heif') is not None, 'entry setup did not install pillow_heif')
             share.add(105, 'IMG_0105.HEIC', heic((120, 60, 200)))
         again = await hass.config_entries.flow.async_init(DOMAIN, context={'source': 'user'})
-        # single_config_entry in the manifest: HA aborts before the flow's own unique-id check.
-        check(again['type'] == 'abort' and again['reason'] == 'single_instance_allowed', f'second entry not aborted: {again}')
+        again = await hass.config_entries.flow.async_configure(again['flow_id'], {'next_step_id': 'albums'})
+        # Unique id `albums`: still one albums entry per installation.
+        check(again['type'] == 'abort' and again['reason'] == 'already_configured', f'second entry not aborted: {again}')
 
         def manager():
             return hass.data[albums.DATA]

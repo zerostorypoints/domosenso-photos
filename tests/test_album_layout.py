@@ -1,5 +1,6 @@
 """Album folder layout and file names (no Home Assistant import)."""
 import importlib
+import json
 import sys
 import types
 from datetime import datetime, timezone
@@ -97,3 +98,26 @@ def test_sanitize_dot_space_inputs_values():
 def test_sanitize_caps_utf8_bytes():
     name = layout.sanitize_name('🌞' * 80)
     assert name and len(name.encode('utf-8')) <= 200
+
+
+def test_resolve_path_owner_and_key(tmp_path):
+    (tmp_path / 'Trip').mkdir()
+    (tmp_path / 'Trip/.sync.json').write_text(json.dumps({'owner': 'lightroom:acct-0001', 'key': 'alb1', 'items': {}}))
+    assert layout.resolve_path(tmp_path, 'Trip', 'lightroom:acct-0001', 'alb2') == 'Trip-2'
+    assert layout.resolve_path(tmp_path, 'Trip', 'lightroom:acct-0001', 'alb1') == 'Trip'
+    assert layout.resolve_path(tmp_path, 'Trip', 'lightroom:other', 'alb1') == 'Trip-2'
+    (tmp_path / 'syn').mkdir()
+    (tmp_path / 'syn/.sync.json').write_text(json.dumps({'album_id': 'a1'}))
+    assert layout.resolve_path(tmp_path, 'syn', 'a1') == 'syn'
+    assert layout.resolve_path(tmp_path, 'syn', 'a2') == 'syn-2'
+    assert layout.resolve_path(tmp_path, 'Trip', 'alb1') == 'Trip-2'  # a Synology id never owns a Lightroom folder
+
+
+def test_layout_helpers_moved(tmp_path):
+    assert layout.inside(tmp_path, 'a/b') and not layout.inside(tmp_path, '../x') and not layout.inside(tmp_path, '.')
+    layout.make_dirs(tmp_path, 'a/b')
+    assert (tmp_path / 'a/b').is_dir()
+    assert layout.rename_target(tmp_path, 'a/b', 'a') == 'a-2'
+    with pytest.raises(layout.PhotoDirMissing):
+        layout.make_dirs(tmp_path / 'gone', 'x')
+    assert not (tmp_path / 'gone').exists()

@@ -3,12 +3,11 @@
   "name": "DomoSenso Photos",
   "codeowners": ["@piotr-dziubecki"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["application_credentials"],
   "documentation": "https://github.com/zerostorypoints/domosenso-photos",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/zerostorypoints/domosenso-photos/issues",
   "requirements": [],
-  "single_config_entry": true,
   "version": "0.2.0"
 }

@@ -14,7 +14,8 @@ from PIL import Image, UnidentifiedImageError
 
 from . import album_image, album_plan
 from .album_files import MARKER, free_bytes, read_marker, remove_photo, write_marker, write_photo
-from .album_layout import initial_path, local_filename, resolve_path, sanitize_name
+from .album_layout import (PhotoDirMissing, initial_path, inside, local_filename, make_dirs, rename_target,
+                           resolve_path, sanitize_name)
 from .album_share import (AuthFailed, NoDownload, RemoteAlbum, RemoteItem, ShareClient, ShareError,
                           Unreachable, parse_share_url)
 
@@ -69,10 +70,6 @@ class _InvalidPath(Exception):
     pass
 
 
-class _PhotoDirMissing(Exception):
-    pass
-
-
 @dataclass
 class _Run:
     rec: dict
@@ -110,7 +107,7 @@ async def sync_album(record: AlbumRecord, client: ShareClient, photo_dir: Path, 
         _fail(run, 'error', 'incomplete_listing')
     except _InvalidPath:
         _fail(run, 'error', 'invalid_path')
-    except _PhotoDirMissing:
+    except PhotoDirMissing:
         _fail(run, 'error', 'photo_dir_missing')
     except _DiskFull:
         _fail(run, 'disk_full')
@@ -134,7 +131,7 @@ def _fail(run: _Run, status: str, error: str | None = None) -> None:
 async def _sync(run: _Run, client: ShareClient, tz: tzinfo, confirm: bool) -> None:
     rec, now = run.rec, run.now
     if not await run.io(run.photo_dir.is_dir):  # unmounted storage: touch nothing, never re-create it
-        raise _PhotoDirMissing
+        raise PhotoDirMissing
     # Deletions are confirmed only for a hold that exists before this run.
     confirm = confirm and rec.get('status') == 'awaiting_confirmation'
     await client.login()
@@ -193,12 +190,6 @@ def _owned(folder: Path, own: str) -> bool:
     return (read_marker(folder) or {}).get('album_id') == own
 
 
-def _inside(photo_dir: Path, path: str) -> bool:
-    root = photo_dir.resolve()
-    target = (photo_dir / path).resolve()
-    return target != root and target.is_relative_to(root)
-
-
 def _local_items(photo_dir: Path, rec: dict) -> dict[int, str]:
     """Marker entries whose file is still there; a missing file is fetched again."""
     path = rec.get('path')
@@ -215,25 +206,6 @@ def _plain(name) -> bool:
     return isinstance(name, str) and name not in ('', '.', '..') and PurePosixPath(name).name == name
 
 
-def _rename_target(photo_dir: Path, path: str, wanted: str) -> str:
-    """First of wanted, wanted-2, ... that is free; the current path if it comes first."""
-    candidate, n = wanted, 1
-    while candidate != path and (photo_dir / candidate).exists():
-        n += 1
-        candidate = f'{wanted}-{n}'
-    return candidate
-
-
-def _make_dirs(photo_dir: Path, path: str) -> None:
-    """Create path below photo_dir one level at a time; photo_dir itself is never created."""
-    if not photo_dir.is_dir():
-        raise _PhotoDirMissing
-    current = photo_dir
-    for part in PurePosixPath(path).parts:
-        current = current / part
-        current.mkdir(exist_ok=True)
-
-
 def _place_folder(run: _Run, remote: RemoteAlbum, tz: tzinfo) -> Path:
     """Pick (first sync), follow a remote rename, then create the album folder and its marker."""
     rec, photo_dir, own = run.rec, run.photo_dir, run.rec['id']
@@ -241,21 +213,21 @@ def _place_folder(run: _Run, remote: RemoteAlbum, tz: tzinfo) -> Path:
     if not path:
         path = rec.get('path_override') or initial_path(remote.name, remote.start_time, tz)
     elif not rec.get('path_override') and rec.get('name') not in (None, remote.name):
-        new = _rename_target(photo_dir, path, str(PurePosixPath(path).with_name(sanitize_name(remote.name))))
+        new = rename_target(photo_dir, path, str(PurePosixPath(path).with_name(sanitize_name(remote.name))))
         old = photo_dir / path
         if new != path and (not old.exists() or _owned(old, own)):
             if old.exists():
-                _make_dirs(photo_dir, str(PurePosixPath(new).parent))
+                make_dirs(photo_dir, str(PurePosixPath(new).parent))
                 old.rename(photo_dir / new)
                 run.renamed = True
             path = new
-    if not _inside(photo_dir, path):
+    if not inside(photo_dir, path):
         raise _InvalidPath(path)
     path = resolve_path(photo_dir, path, own)
     rec['path'] = path
     folder = photo_dir / path
     run.created = not folder.exists()
-    _make_dirs(photo_dir, path)
+    make_dirs(photo_dir, path)
     write_marker(folder, run.marker)
     return folder
 
@@ -337,7 +309,7 @@ async def remove_album(record: AlbumRecord, photo_dir: Path, run_blocking: RunBl
 
 def _remove(record: AlbumRecord, photo_dir: Path) -> None:
     path = record.get('path')
-    if not (path and _inside(photo_dir, path)):
+    if not (path and inside(photo_dir, path)):
         return
     folder = photo_dir / path
     marker = read_marker(folder)

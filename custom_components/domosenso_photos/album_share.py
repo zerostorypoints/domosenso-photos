@@ -50,7 +50,8 @@ def api_base(link: ShareLink, host_map: list[dict[str, str]]) -> str:
 USER_AGENT = 'domosenso-photos/0.2.0'
 PAGE_SIZE = 500
 MAX_BODY = 200_000_000  # larger responses are refused by the transport
-Transport = Callable[..., Awaitable[tuple[int, str, bytes]]]
+# (status, content type, body), plus the response headers when the transport was made with_headers.
+Transport = Callable[..., Awaitable[tuple[int, str, bytes] | tuple[int, str, bytes, dict[str, str]]]]
 
 
 class ShareError(Exception):

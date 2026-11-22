@@ -4,9 +4,11 @@
 [![Validate](https://github.com/zerostorypoints/domosenso-photos/actions/workflows/validate.yml/badge.svg)](https://github.com/zerostorypoints/domosenso-photos/actions/workflows/validate.yml)
 [![Tests](https://github.com/zerostorypoints/domosenso-photos/actions/workflows/tests.yml/badge.svg)](https://github.com/zerostorypoints/domosenso-photos/actions/workflows/tests.yml)
 
-Keep a photo folder in Home Assistant in step with shared Synology Photos albums. Each album is
-added by its share link, copied into its own folder as screen-sized JPEG files and updated on a
-timer. The share link is the only access: no Synology account or token is stored.
+Keep a photo folder in Home Assistant in step with shared Synology Photos albums or with an Adobe
+Lightroom library. A Synology album is added by its share link, copied into its own folder as
+screen-sized JPEG files and updated on a timer; the share link is the only access, no Synology
+account or token is stored. A Lightroom library is read through your own Adobe sign-in: the photos
+that pass a filter you set are copied into a folder tree that mirrors Lightroom's albums and sets.
 
 The integration fills a folder. Showing the photos (which one is drawn next, rotation, captions)
 is the job of a slideshow that reads that folder, for example the Ramka component of
@@ -18,7 +20,9 @@ is the job of a slideshow that reads that folder, for example the Ramka componen
 
 ## Features
 
-- **Share links only.** Paste a Synology Photos share link, with its password if it has one.
+- **Two sources, chosen when you add the integration:** Synology Photos albums, and an Adobe
+  Lightroom library (cloud). Each is its own entry; see [Lightroom library](#lightroom-library).
+- **Synology: share links only.** Paste a Synology Photos share link, with its password if it has one.
 - **One folder per album**, `<photo folder>/<YYYY>/<MM>/<album name>` by default, or a folder
   you choose. A remote rename of the album renames the folder.
 - **Screen-sized JPEG.** Every photo is converted on import to a JPEG of at most 2560 pixels on
@@ -33,6 +37,9 @@ is the job of a slideshow that reads that folder, for example the Ramka componen
 - **Host map** for a NAS whose public name does not answer from inside your network.
 - **Actions** to add, remove and sync albums from automations (administrators only), and a sensor
   with the state of every album.
+- **Lightroom, selected by a filter:** stars, flag, albums, dates, edited photos, camera or lens,
+  with a preview before a change is saved. Edited photos are fetched as edited in Lightroom.
+- **Lightroom is read-only:** nothing is ever changed or deleted in Adobe's cloud.
 - English, German and Polish translations.
 
 ## Installation
@@ -66,8 +73,9 @@ verified on DSM in November 2026.
 
 ### Add the integration
 
-Go to **Settings → Devices & services → Add integration → DomoSenso Photos**. There is one entry
-per Home Assistant. The only field is the photo folder, an existing absolute path (default
+Go to **Settings → Devices & services → Add integration → DomoSenso Photos** and choose
+**Synology Photos albums** (for Lightroom see [Lightroom library](#lightroom-library)). There is
+one Synology entry per Home Assistant. The only field is the photo folder, an existing absolute path (default
 `/config/www/ramka`). Everything under `/config/www` is served without login, so add only albums
 you are fine to show there.
 
@@ -253,6 +261,219 @@ If the photo folder itself is missing (for example unmounted storage), every syn
 `error` / `photo_dir_missing` and changes nothing; the sync never creates the photo folder, only
 folders below it.
 
+## Lightroom library
+
+Reads an Adobe Lightroom (cloud) library, selects photos with a filter and copies them into a folder
+tree that mirrors Lightroom's albums and sets. It is a second kind of entry, next to the Synology one; both can run at
+the same time. Lightroom Classic (desktop catalogs) is not supported.
+
+The integration only reads. Every request to Lightroom is a `GET`; the only `POST` is the token
+exchange at Adobe's sign-in. Nothing is changed, generated or deleted in Adobe's cloud: no photo,
+album, rating, flag or rendition. Adobe's Lightroom permission is not read-only, so the client
+refuses any other request method before sending it.
+
+### Adobe project
+
+You bring your own Adobe client; the integration ships none. In the
+[Adobe Developer Console](https://developer.adobe.com/console) create a project with the
+**Lightroom Services** API as an **OAuth Web App**, and register
+`https://my.home-assistant.io/redirect/oauth` as its redirect URI.
+
+- Use a separate project for each tool that signs in to your Lightroom (this integration, any
+  other script or container), so that each has its own client ID and secret.
+- Adobe may not offer Lightroom Services to new projects on some accounts (inference from reports
+  in Adobe's community forum). If it is not offered, an existing project that has it can be used:
+  add Home Assistant's redirect next to the redirects it already has.
+- [My Home Assistant](https://my.home-assistant.io) must point to the same address you open Home
+  Assistant with. Otherwise the sign-in ends with "Invalid state".
+
+### Add the library
+
+1. **Settings → Devices & services → Add integration → DomoSenso Photos → Adobe Lightroom
+   library.** If no Adobe credentials exist yet, Home Assistant asks for them
+   (Application Credentials): the project's client ID and client secret.
+2. Sign in to Adobe in the window that opens and allow access.
+3. Choose the photo folder (an existing absolute path, default `/config/www/ramka`) and an optional
+   subfolder, for example `lightroom`. Both are fixed afterwards: changing them would move every
+   photo. Everything under `/config/www` is served without login.
+
+There is one entry per Adobe account; adding the same account again is refused. The first sync
+starts a minute after setup and reads the whole library before it writes anything.
+
+### Filter
+
+A photo is synced when it meets every condition that is set. An empty field sets no condition.
+Edit it under **Configure → Filter**.
+
+| Condition | Values | Default |
+| --- | --- | --- |
+| Ratings | any of 0 (unrated) to 5; at least one | 3, 4, 5 |
+| Flag | any, not rejected, picks only | not rejected |
+| Only these albums | albums or sets of albums; a set means every album below it | empty (all) |
+| Never these albums | the same; wins over the line above | empty |
+| Photos in no album | on or off | on |
+| Taken from, until | dates, both inclusive | empty |
+| Taken in the last years | 1 to 50; replaces the two dates when set | empty |
+| Edited photos only | on: only photos changed from Lightroom's defaults | off |
+| Camera or lens contains / does not contain | comma-separated text, matched anywhere in make, model or lens, ignoring case | empty |
+
+Album rules:
+
+- With "Only these albums" set, a photo passes only through an included album that is not
+  excluded, and goes into one of those albums. A photo in several albums goes into the first by
+  name (ignoring case, then by id).
+- A photo whose every album is excluded is not synced; it does not fall back to a month folder.
+- A photo in no album passes only if "Photos in no album" is on.
+- An album that no longer exists stays in the list as "missing album" and is ignored.
+
+### Preview
+
+**Next** on the filter form does not save. It shows, from the library as last read (with its
+date), how many photos the next sync would keep, add, remove and move, whether a safety hold would
+apply, and the five folders with the most change. **Save** applies the filter (the entry reloads
+and syncs); **Back to the filter** returns to the form. The action `domosenso_photos.lightroom_preview`
+returns the same counts for the saved filter and makes no request to Adobe. Before the first
+sync there is no library to count; Save still applies the filter.
+
+### Folders and files
+
+- Albums: `<subfolder>/<set>/…/<album name>`, the album's path in Lightroom's album tree
+  (`2023/Iceland/Day 1`). Only album folders hold photos and the record `.sync.json`; set folders
+  are plain folders. Photos in no album: `<subfolder>/<YYYY-MM>` of their capture date. Without a
+  subfolder the folders sit directly in the photo folder.
+- An album renamed or moved in Lightroom, or a set renamed or moved, moves the album folders on the
+  next sync, with their photos; nothing is downloaded again. A set folder that such a move (or a
+  removal) leaves empty is deleted; one that still holds anything (a file of yours, a NAS's
+  `@eaDir`) stays, and so does any other empty folder. Folders from the earlier flat layout (one
+  folder per album) move into the tree the same way on the first sync after an update.
+- An album with the same name as a set beside it gets `-2`, so an album folder never holds another
+  album's folder.
+- Album names are cleaned like Synology ones, and a leading `@` is dropped (slideshows often skip
+  folders starting with `.` or `@`). If two names collide or another folder has the name, the
+  later one gets `-2` and a repair issue appears; its path is in the sensor's `path_collisions`.
+- File name: `<YYYY-MM-DD>_<asset id>.jpg`, with the capture date as modification time.
+- Every photo passes the same conversion as a Synology photo: longest edge `max_edge`, JPEG
+  quality, orientation applied, GPS never written, colour profile kept. Date, camera, lens and
+  exposure are added from the photo's Lightroom metadata, because Adobe's rendition has none.
+- Lightroom's edits are applied (Adobe renders them). A photo edited in Lightroom is downloaded
+  again, a photo moved to another album moves, and one that no longer passes the filter or leaves
+  the library is removed.
+- A rendition that cannot be fetched or decoded is skipped, counted in `skipped_count` and tried
+  again after a day. Only the date, camera, lens and exposure tags above are written; anything else
+  a rendition carries (serial numbers, maker notes, location) is dropped.
+
+### Resolution
+
+Photos are at most 2048 px on the longest edge, unless Lightroom already holds a full-size
+rendition and `max_edge` is above 2048. The integration never asks Adobe to generate one (that would
+add a file to your cloud), so a photo without it stays at 2048 px; it is never enlarged.
+
+### Which folders it touches
+
+Only folders that carry its own `.sync.json` marker, and only the files the marker lists. Other
+files in them stay.
+
+- **Copies.** If you copy a synced folder, so that more than one folder carries the marker of the
+  same album, the integration cannot tell which is its own. It then touches none of that album's
+  folders and shows the repair issue "copied folders are left alone". The sensor attribute
+  `ambiguous_folders` lists them; delete the copy, or the `.sync.json` inside it, and the next
+  sync continues.
+- **Moved folders.** A synced folder you move or rename on purpose is moved back to its place at
+  the next sync.
+- **Another tool writing the same folder.** The integration cannot know about it, and would put
+  its own folders next to the other tool's with a `-2` suffix. Use a separate photo folder (or a
+  subfolder) until the other tool is stopped and its files are removed. Files written by another
+  tool are not taken over.
+- **Synology albums in the same photo folder.** Give Lightroom a subfolder (set at setup), so its
+  album folders and the Synology ones never meet. A Lightroom folder that holds any subfolder is
+  never renamed or removed; its own photos still sync.
+- Repair issues name no folders, because Home Assistant includes repair issues in diagnostics
+  downloads; they point to the sensor attributes instead.
+
+### Safety holds
+
+A sync that would remove or move most of what it manages waits instead. Nothing is removed or moved
+(new photos are still added), the status is `awaiting_confirmation` and a repair issue appears when:
+
+| Hold | When |
+| --- | --- |
+| `mass_remove` | at least 20 files are managed and more than half would be removed |
+| `mass_unfile` | at least 20 files are managed and more than half would move to month folders (for example an album listing that came back empty) |
+| `empty_library` | Adobe lists no photos although files are managed |
+
+If the change is intended, use **Configure → Sync now → Confirm held changes**, or the action
+`domosenso_photos.lightroom_sync` with `confirm: true`. A confirmation applies to a hold that exists
+when it is given, and only to that hold: if the sync then finds another reason to hold (for example
+the library suddenly lists no photos), it waits again. A held sync renames no folder either. A filter change that removes more than half asks for it after Save; the preview
+shows it first.
+
+### Settings, schedule and status
+
+**Configure → Settings**:
+
+| Option | Default | Range |
+| --- | --- | --- |
+| Sync interval | 360 min | 60-1440 |
+| Longest edge | 2560 px | 1024-8192 |
+| JPEG quality | 85 | 60-95 |
+| Keep free on disk | 1 GB | 0.1-1000 GB |
+
+Settings also holds the **Photo folder** and the **Subfolder** chosen when the library was added.
+Changing either asks for a confirmation first; a running sync is stopped. After it the entry
+reloads and syncs into the new folder: every photo is downloaded again, unless that folder
+already holds this library's photos (switching back to an earlier folder downloads only what
+changed). The photos in the old folder are left where they are; the integration does not delete
+them.
+
+The library is synced about 60 seconds after Home Assistant starts, every interval, after a
+filter is saved and on demand. Adobe is asked for at most one request every 0.2 s; a `429` or `5xx`
+answer, or a network error, is retried with back-off (honouring `Retry-After`, at most 300 s). If
+reading the library still fails, the sync ends with `unreachable` and changes nothing. A photo
+whose rendition still fails is skipped like any rendition that cannot be fetched; when 5
+renditions in a row fail that way, Adobe is taken to be down: the sync stops with `unreachable`,
+keeping the photos it wrote so far, and the next sync continues.
+
+The sensor `sensor.domosenso_photos_lightroom` (a second library gets a number) has the sync
+status as its state: `ok`, `syncing`, `awaiting_confirmation`, `unreachable`, `disk_full` or
+`error` (see `error`). Its attributes: `photos`, `folders` (not recorded), `last_sync`,
+`last_success`, `added`, `updated`, `moved`, `removed`, `skipped_count`, `error`,
+`signin_expires`, `cache_date`, `path_collisions` and `ambiguous_folders` (the last two not
+recorded). While a sync runs, `phase`, `done`, `total` and `progress` (in %) say how far it is:
+- `reading_library`: `done` counts the listing pages read so far (a library of 40,000 photos takes
+  several hundred), `total` is the count of the last read (empty on the first one), and `progress`
+  stays at 99 at most until the reading ends;
+- `downloading`, then `removing`: `total` is the photos to write and remove, `done` those handled
+  so far (skipped ones included).
+
+Outside a sync `phase`, `done` and `total` are empty and `progress` is 100 after a sync that
+finished, else empty. They are updated at most every 5 seconds.
+The actions `domosenso_photos.lightroom_sync` (`entry_id`, `confirm`) and
+`domosenso_photos.lightroom_preview` (`entry_id`) are for administrators and return a response.
+**Configure → Sync now** also syncs in the background.
+
+### Sign-in renewal
+
+Adobe's refresh token lives about 14 days. Home Assistant stores the renewed one after each
+refresh, and the token has been seen to renew itself on refresh (observed, not documented by
+Adobe). The syncs therefore keep the sign-in alive. When it is less than 3 days from its end, the
+repair issue "Adobe sign-in ends soon" appears and goes when a refresh moves it on. If Adobe
+refuses the sign-in, Home Assistant asks you to sign in again with the same account (reauthentication);
+nothing is deleted meanwhile.
+
+### Lightroom limits
+
+- Partner API of Adobe: it is not a public, stable interface and may change.
+- Photos are at most 2048 px unless Lightroom already has a full-size rendition (see above).
+- Videos, people (faces) and Lightroom Classic are not supported.
+- The whole library is read on every sync.
+- Diagnostics (download from the entry) carry counts of the metadata Adobe returned, never values,
+  tokens or names.
+
+### Removing a library
+
+Removing the entry deletes its sign-in and its cached library; the folders stay. Adding the same
+Adobe account again takes them back, so no second copy is downloaded next to them.
+
 ## HEIC photos
 
 HEIC/HEIF photos are converted with `pillow-heif` 1.8.1. It is deliberately not a manifest
@@ -270,14 +491,14 @@ image update the next setup installs it again and needs network access for that.
 - Synology Photos share links only: an `http` or `https` link whose path contains
   `/mo/sharing/<passphrase>`, for example `https://photos.example.com/mo/sharing/AbCdEf123`.
   Links with a user name or password in the URL are refused.
-- One entry, and so one photo folder, per Home Assistant.
+- One Synology entry, and so one Synology photo folder, per Home Assistant.
 - Transport timeouts are 30 s to connect, 60 s without data and 15 minutes per request; responses
   over 200 MB are refused. Requests identify as `domosenso-photos/0.1.2`.
 - The share-link API is undocumented; a DSM update can change it.
 
 ## Uninstall
 
-Remove the entry under **Settings → Devices & services → DomoSenso Photos**. This deletes the
+Remove an entry under **Settings → Devices & services → DomoSenso Photos**. This deletes the
 stored links and passwords; every synced folder stays as a plain folder and a slideshow keeps
 showing it. The hidden `.sync.json` markers can be deleted to tidy up, which changes nothing else:
 a new entry gives every album a fresh id, so it never adopts an old marker. Adding the same link
@@ -310,7 +531,10 @@ than reusing it.
   removed for that reason, but the photos themselves are readable by anyone who can reach Home
   Assistant and knows the path.
 - Only administrators can call the actions.
-- The integration talks only to the share host (or its host-map address).
+- The Synology source talks only to the share host (or its host-map address); the Lightroom source
+  only to Adobe's sign-in and Lightroom hosts.
+- The Adobe client secret and the sign-in are stored by Home Assistant (Application Credentials
+  and the entry), never in the photo folder.
 
 ## Development
 
@@ -350,11 +574,44 @@ with `--network none` the container has no IPv4 address and Home Assistant canno
 client session, which is unrelated to `pillow-heif`. The failing install takes about three
 minutes before the test continues.
 
+`tests/lightroom_ha_smoke.py` does the same for the Lightroom source, against a fake Adobe IMS and
+Lightroom on `127.0.0.1`. The library is invented: 30 assets in three albums, two of them inside a
+set, plus two unfiled assets. The smoke points `application_credentials.AUTHORIZE_URL` /
+`TOKEN_URL` and `lightroom_api.API_BASE` at the fake and drives the OAuth redirect the way Home
+Assistant's callback view does. It covers:
+
+- the config flow and a second entry for the same account;
+- the first sync (folders, markers, EXIF, no GPS, serial numbers or maker notes);
+- the filter options with their preview, a held mass removal and its confirmation;
+- an edit re-downloading one photo, and a missing rendition skipped;
+- ambiguous and colliding folders, and what their issues leave out of the diagnostics download;
+- a refused refresh starting reauth, and the sign-in-expiring issue;
+- two accounts at once, with the actions' lifecycle;
+- unload during a sync, removing and re-adding the entry;
+- an albums entry syncing alongside.
+
+The fake Lightroom answers 405 to anything but `GET`; the smoke fails if it ever got such a
+request. Nothing contacts Adobe.
+
+```bash
+HA_SMOKE_CONFIG="$(mktemp -d)"
+docker run --rm \
+  --mount "type=bind,src=$HA_SMOKE_CONFIG,dst=/config" \
+  --mount "type=bind,src=$PWD/custom_components,dst=/config/custom_components,readonly" \
+  --mount "type=bind,src=$PWD/tests/lightroom_ha_smoke.py,dst=/lightroom_ha_smoke.py,readonly" \
+  --entrypoint python ghcr.io/home-assistant/home-assistant:2026.9.2 /lightroom_ha_smoke.py
+rm -rf "$HA_SMOKE_CONFIG"
+```
+
+The last line is `lightroom smoke ok` with exit code 0; a failed check prints
+`lightroom smoke failed: <reason>` and exits 1. `LIGHTROOM_SMOKE_DEBUG=1` keeps the log output.
+
 ## Credits
 
 Made by [Zero Story Points](https://zerostorypoints.com).
 
 Not affiliated with or endorsed by Synology Inc. Synology is a trademark of its owner.
+Not affiliated with or endorsed by Adobe Inc. Adobe and Lightroom are trademarks of their owner.
 
 ## License
 

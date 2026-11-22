@@ -1,5 +1,21 @@
 # Changes
 
+## Unreleased
+
+- Adobe Lightroom (cloud) as a second photo source, next to Synology albums: sign in through
+  Application Credentials, one folder per Lightroom album and one per month for photos in no album,
+  edits as in Lightroom, read-only towards Adobe. Adds the `lightroom_sync` and `lightroom_preview`
+  actions, a Lightroom sensor, safety holds and repair issues (including `signin_expiring`).
+- Filter for the Lightroom photos (ratings, flag, albums, dates, edited, camera or lens) with a
+  preview of what a change would add and remove before it is saved.
+- Lightroom: progress while syncing, also while the library is read (Lightroom sensor attributes
+  `phase`, `done`, `total` and `progress` in %).
+- Lightroom: the photo folder and subfolder can be changed in Settings, also during a sync (which
+  stops); the photos are downloaded again into the new folder and the old folder is left as it is.
+- Lightroom: albums land at their path in the album tree (`<set>/<album>`); folders from the flat
+  layout move there without a download, and set folders a move empties are removed.
+- Photos keep their colour profile (ICC); wide-gamut photos, such as iPhone originals, no longer shift in colour.
+
 ## 0.2.0 — 2026-11-22
 
 - Add `AlbumsManager.frame_api`, a versioned in-process facade (`albums`, `check`, `add`,

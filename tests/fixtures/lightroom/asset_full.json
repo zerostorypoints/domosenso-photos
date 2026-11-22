@@ -1,0 +1,25 @@
+{
+  "id": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+  "subtype": "image",
+  "created": "2024-05-04T08:00:00Z",
+  "updated": "2024-05-06T09:30:00Z",
+  "payload": {
+    "userCreated": "2024-05-04T08:00:00Z",
+    "userUpdated": "2024-05-05T10:00:00Z",
+    "captureDate": "2024-05-03T17:03:26.84+02:00",
+    "importSource": {"importTimestamp": "2024-05-04T08:00:00Z"},
+    "ratings": {"app-one": {"rating": 4, "date": "2024-05-04T09:00:00Z"}},
+    "reviews": {"app-one": {"flag": "pick", "date": "2024-05-04T09:00:00Z"}},
+    "develop": {"userUpdated": "2024-05-06T07:15:00Z"},
+    "xmp": {
+      "tiff": {"Make": "Fabrikam", "Model": "FX-100"},
+      "aux": {"Lens": "Fabrikam 35mm F1.8"},
+      "exif": {
+        "FocalLength": [35, 1],
+        "FNumber": [18, 10],
+        "ExposureTime": [1, 400],
+        "ISOSpeedRatings": 200
+      }
+    }
+  }
+}

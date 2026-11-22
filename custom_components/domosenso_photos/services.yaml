@@ -48,3 +48,33 @@ album_sync:
       default: false
       selector:
         boolean:
+lightroom_sync:
+  name: Sync Lightroom
+  description: Syncs one Lightroom library or all of them now and returns their state.
+  fields:
+    entry_id:
+      name: Library
+      description: Config entry ID of the Lightroom library; empty syncs all.
+      example: "01JABCDEF0123456789ABCDEFG"
+      selector:
+        config_entry:
+          integration: domosenso_photos
+    confirm:
+      name: Confirm held changes
+      description: Apply the removals and moves that a held sync kept back.
+      default: false
+      selector:
+        boolean:
+lightroom_preview:
+  name: Preview Lightroom
+  description: >-
+    Counts, from the cached library, what a sync with the current filter would keep, add, remove and
+    move. Makes no request to Adobe.
+  fields:
+    entry_id:
+      name: Library
+      description: Config entry ID of the Lightroom library; empty previews all.
+      example: "01JABCDEF0123456789ABCDEFG"
+      selector:
+        config_entry:
+          integration: domosenso_photos

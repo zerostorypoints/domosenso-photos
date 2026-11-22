@@ -2,7 +2,7 @@ import io
 import sys
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageCms
 
 import importlib
 import types
@@ -17,7 +17,7 @@ album_image = importlib.import_module('album_image_pkg.album_image')
 DATE, MODEL = 36867, 0x0110
 
 
-def _jpeg(size, orientation=None, exif=True):
+def _jpeg(size, orientation=None, exif=True, icc=None):
     img = Image.new('RGB', size, (200, 30, 30))
     ex = Image.Exif()
     if exif:
@@ -26,7 +26,8 @@ def _jpeg(size, orientation=None, exif=True):
         if orientation:
             ex[0x0112] = orientation
     buf = io.BytesIO()
-    img.save(buf, format='JPEG', **({'exif': ex.tobytes()} if exif else {}))
+    img.save(buf, format='JPEG', **({'exif': ex.tobytes()} if exif else {}),
+             **({'icc_profile': icc} if icc else {}))
     return buf.getvalue()
 
 
@@ -167,3 +168,47 @@ def test_large_jpeg_keeps_size_and_orientation():
     assert out.getexif()[0x0112] == 1
     top, bottom = out.getpixel((853, 100)), out.getpixel((853, 2460))
     assert top[0] > 150 and top[2] < 80 and bottom[2] > 150 and bottom[0] < 80
+
+
+def test_normalize_keeps_icc_profile():
+    icc = ImageCms.ImageCmsProfile(ImageCms.createProfile('sRGB')).tobytes()
+    src = _jpeg((400, 300), icc=icc)
+    out = album_image.normalize(src, 200, 85)
+    assert Image.open(io.BytesIO(out)).info.get('icc_profile') == icc
+
+
+def test_normalize_without_icc_has_none():
+    out = album_image.normalize(_jpeg((400, 300)), 200, 85)
+    assert 'icc_profile' not in Image.open(io.BytesIO(out)).info
+
+
+def test_normalize_add_exif_written():
+    def add(ex):
+        ex[0x010F] = 'Maker X'
+        ex.get_ifd(0x8769)[0x8827] = 200
+    out = album_image.normalize(_jpeg((400, 300), exif=False), 200, 85, add)
+    ex = Image.open(io.BytesIO(out)).getexif()
+    assert ex[0x010F] == 'Maker X' and ex.get_ifd(0x8769)[0x8827] == 200
+
+
+def test_normalize_add_exif_gps_still_removed():
+    def add(ex):
+        ex.get_ifd(0x8825)[1] = 'N'
+    out = album_image.normalize(_jpeg((400, 300)), 200, 85, add)
+    assert not Image.open(io.BytesIO(out)).getexif().get_ifd(0x8825)
+
+
+@pytest.mark.parametrize('mode', ['L', 'CMYK'])
+def test_normalize_drops_icc_of_converted_source(mode):
+    icc = ImageCms.ImageCmsProfile(ImageCms.createProfile('sRGB')).tobytes()
+    buf = io.BytesIO()
+    Image.new(mode, (400, 300)).save(buf, format='JPEG', icc_profile=icc)
+    out = album_image.normalize(buf.getvalue(), 200, 85)
+    assert 'icc_profile' not in Image.open(io.BytesIO(out)).info
+
+
+def test_normalize_icc_survives_orientation():
+    icc = ImageCms.ImageCmsProfile(ImageCms.createProfile('sRGB')).tobytes()
+    out = Image.open(io.BytesIO(album_image.normalize(
+        _jpeg((300, 200), orientation=6, icc=icc), 2560, 85)))
+    assert out.size == (200, 300) and out.info.get('icc_profile') == icc

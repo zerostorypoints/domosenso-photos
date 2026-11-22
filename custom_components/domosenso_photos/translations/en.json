@@ -2,20 +2,63 @@
   "config": {
     "step": {
       "user": {
+        "title": "Add DomoSenso Photos",
+        "description": "Choose where the photos come from. Each source gets its own entry.",
+        "menu_options": {
+          "albums": "Synology Photos albums",
+          "lightroom": "Adobe Lightroom library"
+        }
+      },
+      "albums": {
         "title": "Set up photo albums",
         "description": "Shared albums are copied into this folder as screen-sized JPEG files. Everything in it is readable without login when it lies under /config/www, so add only albums you are fine to show there. Add albums afterwards with Configure.",
         "data": {
           "photo_dir": "Photo folder"
         }
+      },
+      "pick_implementation": {
+        "title": "Pick the Adobe credentials"
+      },
+      "lightroom_folder": {
+        "title": "Lightroom photo folder",
+        "description": "Photos from your Lightroom library are copied into this folder as screen-sized JPEG files, one folder per album and one per month for photos in no album. Everything under /config/www is readable without login. The first sync starts a minute after setup.",
+        "data": {
+          "photo_dir": "Photo folder",
+          "prefix": "Subfolder (optional)"
+        },
+        "data_description": {
+          "prefix": "Leave empty to put the album folders straight into the photo folder, or name a subfolder, for example lightroom."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Sign in to Adobe again",
+        "description": "Adobe no longer accepts the Lightroom sign-in. Sign in again with the same Adobe account."
       }
     },
     "error": {
-      "invalid_photo_dir": "Enter the absolute path of an existing folder, for example /config/www/ramka."
+      "invalid_photo_dir": "Enter the absolute path of an existing folder, for example /config/www/ramka.",
+      "invalid_prefix": "Enter a folder inside the photo folder, without .. parts, or leave it empty."
     },
     "abort": {
-      "already_configured": "DomoSenso Photos is already set up. Use Configure on its entry to add or remove albums.",
-      "single_instance_allowed": "DomoSenso Photos is already set up. Use Configure on its entry to add or remove albums."
+      "already_configured": "Already set up: the Synology albums entry, or this Adobe account. Use Configure on that entry.",
+      "wrong_account": "You signed in with a different Adobe account. Sign in with the account this entry was set up with.",
+      "account_unknown": "Adobe did not say which account signed in. Try again.",
+      "reauth_successful": "Signed in again. The Lightroom sync continues.",
+      "missing_credentials": "Add the Adobe application credentials (client ID and client secret) first.",
+      "missing_configuration": "Lightroom sign-in is not set up. Add the Adobe application credentials first.",
+      "oauth_implementation_unavailable": "The Adobe sign-in is not available right now. Try again later.",
+      "oauth_error": "Adobe returned an invalid sign-in token.",
+      "oauth_failed": "Getting the sign-in token from Adobe failed.",
+      "oauth_timeout": "Adobe did not answer in time while finishing the sign-in.",
+      "oauth_unauthorized": "Adobe refused the sign-in. Check the client ID, the client secret and the redirect URI.",
+      "user_rejected_authorize": "The sign-in was cancelled: {error}",
+      "authorize_url_timeout": "Timeout while preparing the Adobe sign-in.",
+      "no_url_available": "Home Assistant has no URL to return to after the sign-in. See {docs_url}.",
+      "already_in_progress": "This is already being set up. Finish that setup first."
     }
+  },
+  "application_credentials": {
+    "description": "Create a project in the Adobe Developer Console ({console_url}) with the Lightroom Services API as an OAuth Web App, and register {redirect_url} as its redirect URI. Enter the project's client ID and client secret here. Use a project of its own for Home Assistant."
   },
   "options": {
     "step": {
@@ -66,6 +109,87 @@
           "free_floor_gb": "Keep free on disk",
           "host_map": "Host map"
         }
+      },
+      "lightroom": {
+        "title": "Lightroom library",
+        "description": "Sync now, choose which photos are synced, or change the settings.",
+        "menu_options": {
+          "sync_now": "Sync now",
+          "filter": "Filter",
+          "settings": "Settings"
+        }
+      },
+      "lightroom_sync_now": {
+        "title": "Sync now",
+        "description": "The sync runs in the background; the Lightroom sensor shows the result. Confirm held changes applies the removals and moves a held sync kept back.",
+        "data": {
+          "confirm": "Confirm held changes"
+        }
+      },
+      "lightroom_settings": {
+        "title": "Lightroom settings",
+        "description": "Changing the photo folder or the subfolder asks for a confirmation first.",
+        "data": {
+          "photo_dir": "Photo folder",
+          "prefix": "Subfolder",
+          "interval_min": "Sync interval",
+          "max_edge": "Longest edge",
+          "quality": "JPEG quality",
+          "free_floor_gb": "Keep free on disk"
+        }
+      },
+      "lightroom_folder_confirm": {
+        "title": "Change the photo folder",
+        "description": "Photos will be synced into {new}. Every photo is downloaded again, unless that folder already holds this library's photos. The photos in {old} stay where they are: the integration does not delete them. A running sync is stopped. Submit to change the folder."
+      },
+      "filter": {
+        "title": "Filter",
+        "description": "A photo is synced when it meets every condition set here. An empty field sets no condition. Next shows what would change before anything is saved.",
+        "data": {
+          "ratings": "Ratings",
+          "flag": "Flag",
+          "albums_include": "Only these albums",
+          "albums_exclude": "Never these albums",
+          "include_unfiled": "Photos in no album",
+          "captured_from": "Taken from",
+          "captured_to": "Taken until",
+          "captured_last_years": "Taken in the last years",
+          "edited_only": "Edited photos only",
+          "equipment_include": "Camera or lens contains",
+          "equipment_exclude": "Camera or lens does not contain"
+        },
+        "data_description": {
+          "albums_include": "Empty: every album. A set includes every album below it.",
+          "albums_exclude": "Wins over the albums above. A photo whose every album is excluded is not synced.",
+          "include_unfiled": "Photos in no album go to one folder per month.",
+          "captured_last_years": "1 to 50; replaces the dates above when set.",
+          "equipment_include": "Comma-separated; matches part of the make, model or lens, ignoring case.",
+          "equipment_exclude": "Comma-separated; matches part of the make, model or lens, ignoring case."
+        }
+      },
+      "filter_preview": {
+        "title": "Preview",
+        "description": "From the library read at {cache_date}, the next sync would keep {kept} photos, add {add}, remove {remove} and move {move}. Safety hold: {hold} (if set, the sync waits for Sync now with Confirm held changes before removing or moving anything).\n\nFolders with the most change:\n{top}",
+        "menu_options": {
+          "save": "Save",
+          "filter": "Back to the filter"
+        }
+      },
+      "filter_no_library": {
+        "title": "Preview",
+        "description": "No library has been read yet, so nothing can be counted. Save applies the filter, and the sync that follows reads the library.",
+        "menu_options": {
+          "save": "Save",
+          "filter": "Back to the filter"
+        }
+      },
+      "filter_no_folder": {
+        "title": "Preview",
+        "description": "The photo folder is missing (for example, its storage is not mounted), so nothing can be counted and the sync would not run. Save still applies the filter.",
+        "menu_options": {
+          "save": "Save",
+          "filter": "Back to the filter"
+        }
       }
     },
     "error": {
@@ -76,7 +200,12 @@
       "invalid_host_map": "Each line must read `from -> to`, where both sides are an origin only: http or https, host and optional port, without path, query, trailing slash or user name.",
       "album_busy": "This album is syncing right now. Try again when the sync has finished.",
       "unknown_album": "This album no longer exists.",
-      "share_error": "The first sync of this album failed. Check the link, the photo folder and the free disk space, then try again."
+      "share_error": "The first sync of this album failed. Check the link, the photo folder and the free disk space, then try again.",
+      "invalid_years": "Enter a whole number from 1 to 50, or leave it empty.",
+      "invalid_range": "This date is before the start date.",
+      "ratings_empty": "Choose at least one rating.",
+      "invalid_photo_dir": "Enter the absolute path of an existing folder, for example /config/www/ramka.",
+      "invalid_prefix": "Enter a folder inside the photo folder, without .. parts, or leave it empty."
     },
     "abort": {
       "not_loaded": "DomoSenso Photos is not loaded. Reload the integration and try again.",
@@ -91,6 +220,22 @@
     "album_path_collision": {
       "title": "Album {name} was placed in another folder",
       "description": "The wanted folder for album {name} already belongs to something else, so the album was placed in {path}. Rename or move the other folder, or set a folder for this album, if you want it elsewhere."
+    },
+    "lightroom_awaiting_confirmation": {
+      "title": "{title} waits for confirmation",
+      "description": "The last sync of {title} removed and moved nothing because of a safety hold ({reason}): mass_remove means more than half of the synced photos would be removed, mass_unfile that more than half would move to month folders, empty_library that Adobe listed no photos. New photos were still added. If this is intended, use Configure, Sync now with Confirm held changes, or the action domosenso_photos.lightroom_sync with confirm."
+    },
+    "lightroom_path_collision": {
+      "title": "{title}: folders got another name",
+      "description": "The wanted folder name was already taken by another folder, so {count} folders got a number added. Their paths are in the path_collisions attribute of {entity}. Rename or move the other folder if you want the plain name; the next sync then renames these."
+    },
+    "lightroom_ambiguous_folders": {
+      "title": "{title}: copied folders are left alone",
+      "description": "More than one folder carries the sync marker of the same album, so none of these {count} folders is changed. Their paths are in the ambiguous_folders attribute of {entity}. Delete the copy, or the .sync.json file inside the copy, to let the sync continue."
+    },
+    "lightroom_signin_expiring": {
+      "title": "{title}: Adobe sign-in ends soon",
+      "description": "The Adobe sign-in of {title} ends on {expires}. It is normally renewed by the syncs; if it is not, Home Assistant asks you to sign in again once Adobe refuses it."
     }
   },
   "services": {
@@ -131,6 +276,30 @@
           "description": "Delete photos that a held sync kept because more than half disappeared."
         }
       }
+    },
+    "lightroom_sync": {
+      "name": "Sync Lightroom",
+      "description": "Syncs one Lightroom library or all of them now and returns their state.",
+      "fields": {
+        "entry_id": {
+          "name": "Library",
+          "description": "Config entry ID of the Lightroom library; empty syncs all."
+        },
+        "confirm": {
+          "name": "Confirm held changes",
+          "description": "Apply the removals and moves that a held sync kept back."
+        }
+      }
+    },
+    "lightroom_preview": {
+      "name": "Preview Lightroom",
+      "description": "Counts, from the cached library, what a sync with the current filter would keep, add, remove and move. Makes no request to Adobe.",
+      "fields": {
+        "entry_id": {
+          "name": "Library",
+          "description": "Config entry ID of the Lightroom library; empty previews all."
+        }
+      }
     }
   },
   "exceptions": {
@@ -142,6 +311,28 @@
     },
     "unknown_album": {
       "message": "Unknown album ID."
+    },
+    "unknown_library": {
+      "message": "No loaded Lightroom library has this entry ID."
+    }
+  },
+  "selector": {
+    "rating": {
+      "options": {
+        "0": "Unrated",
+        "1": "1 star",
+        "2": "2 stars",
+        "3": "3 stars",
+        "4": "4 stars",
+        "5": "5 stars"
+      }
+    },
+    "flag": {
+      "options": {
+        "any": "Any",
+        "not_rejected": "Not rejected",
+        "picks_only": "Picks only"
+      }
     }
   }
 }

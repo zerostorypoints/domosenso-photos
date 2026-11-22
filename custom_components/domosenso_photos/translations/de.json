@@ -2,20 +2,63 @@
   "config": {
     "step": {
       "user": {
+        "title": "DomoSenso Photos hinzufügen",
+        "description": "Wählen Sie, woher die Fotos kommen. Jede Quelle erhält einen eigenen Eintrag.",
+        "menu_options": {
+          "albums": "Synology-Photos-Alben",
+          "lightroom": "Adobe-Lightroom-Bibliothek"
+        }
+      },
+      "albums": {
         "title": "Fotoalben einrichten",
         "description": "Geteilte Alben werden als bildschirmgrosse JPEG-Dateien in diesen Ordner kopiert. Liegt er unter /config/www, ist sein Inhalt ohne Anmeldung lesbar; fügen Sie also nur Alben hinzu, die dort sichtbar sein dürfen. Alben fügen Sie danach über Konfigurieren hinzu.",
         "data": {
           "photo_dir": "Fotoordner"
         }
+      },
+      "pick_implementation": {
+        "title": "Adobe-Zugangsdaten auswählen"
+      },
+      "lightroom_folder": {
+        "title": "Lightroom-Fotoordner",
+        "description": "Fotos aus Ihrer Lightroom-Bibliothek werden als bildschirmgroße JPEG-Dateien in diesen Ordner kopiert, ein Ordner pro Album und einer pro Monat für Fotos ohne Album. Alles unter /config/www ist ohne Anmeldung lesbar. Die erste Synchronisierung startet eine Minute nach der Einrichtung.",
+        "data": {
+          "photo_dir": "Fotoordner",
+          "prefix": "Unterordner (optional)"
+        },
+        "data_description": {
+          "prefix": "Leer lassen, um die Albumordner direkt in den Fotoordner zu legen, oder einen Unterordner angeben, zum Beispiel lightroom."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erneut bei Adobe anmelden",
+        "description": "Adobe akzeptiert die Lightroom-Anmeldung nicht mehr. Melden Sie sich mit demselben Adobe-Konto erneut an."
       }
     },
     "error": {
-      "invalid_photo_dir": "Geben Sie den absoluten Pfad eines vorhandenen Ordners ein, zum Beispiel /config/www/ramka."
+      "invalid_photo_dir": "Geben Sie den absoluten Pfad eines vorhandenen Ordners ein, zum Beispiel /config/www/ramka.",
+      "invalid_prefix": "Geben Sie einen Ordner innerhalb des Fotoordners ohne ..-Teile an oder lassen Sie das Feld leer."
     },
     "abort": {
-      "already_configured": "DomoSenso Photos ist bereits eingerichtet. Alben fügen Sie über Konfigurieren beim Eintrag hinzu oder entfernen sie dort.",
-      "single_instance_allowed": "DomoSenso Photos ist bereits eingerichtet. Alben fügen Sie über Konfigurieren beim Eintrag hinzu oder entfernen sie dort."
+      "already_configured": "Bereits eingerichtet: der Eintrag für Synology-Alben oder dieses Adobe-Konto. Verwenden Sie Konfigurieren bei diesem Eintrag.",
+      "wrong_account": "Sie haben sich mit einem anderen Adobe-Konto angemeldet. Melden Sie sich mit dem Konto an, mit dem dieser Eintrag eingerichtet wurde.",
+      "account_unknown": "Adobe hat nicht mitgeteilt, welches Konto angemeldet ist. Versuchen Sie es erneut.",
+      "reauth_successful": "Erneut angemeldet. Die Lightroom-Synchronisierung läuft weiter.",
+      "missing_credentials": "Fügen Sie zuerst die Adobe-Anwendungszugangsdaten (Client-ID und Client-Secret) hinzu.",
+      "missing_configuration": "Die Lightroom-Anmeldung ist nicht eingerichtet. Fügen Sie zuerst die Adobe-Anwendungszugangsdaten hinzu.",
+      "oauth_implementation_unavailable": "Die Adobe-Anmeldung ist gerade nicht verfügbar. Versuchen Sie es später erneut.",
+      "oauth_error": "Adobe hat ein ungültiges Anmeldetoken geliefert.",
+      "oauth_failed": "Das Anmeldetoken konnte nicht von Adobe abgerufen werden.",
+      "oauth_timeout": "Adobe hat beim Abschluss der Anmeldung nicht rechtzeitig geantwortet.",
+      "oauth_unauthorized": "Adobe hat die Anmeldung abgelehnt. Prüfen Sie Client-ID, Client-Secret und Weiterleitungs-URI.",
+      "user_rejected_authorize": "Die Anmeldung wurde abgebrochen: {error}",
+      "authorize_url_timeout": "Zeitüberschreitung beim Vorbereiten der Adobe-Anmeldung.",
+      "no_url_available": "Home Assistant hat keine URL, zu der nach der Anmeldung zurückgekehrt werden kann. Siehe {docs_url}.",
+      "already_in_progress": "Dies wird bereits eingerichtet. Schließen Sie diese Einrichtung zuerst ab."
     }
+  },
+  "application_credentials": {
+    "description": "Legen Sie in der Adobe Developer Console ({console_url}) ein Projekt mit der Lightroom Services API als OAuth-Web-App an und tragen Sie {redirect_url} als Weiterleitungs-URI ein. Geben Sie hier die Client-ID und das Client-Secret des Projekts ein. Verwenden Sie für Home Assistant ein eigenes Projekt."
   },
   "options": {
     "step": {
@@ -66,6 +109,87 @@
           "free_floor_gb": "Freier Speicher, der bleiben muss",
           "host_map": "Host-Zuordnung"
         }
+      },
+      "lightroom": {
+        "title": "Lightroom-Bibliothek",
+        "description": "Jetzt synchronisieren, festlegen, welche Fotos synchronisiert werden, oder die Einstellungen ändern.",
+        "menu_options": {
+          "sync_now": "Jetzt synchronisieren",
+          "filter": "Filter",
+          "settings": "Einstellungen"
+        }
+      },
+      "lightroom_sync_now": {
+        "title": "Jetzt synchronisieren",
+        "description": "Die Synchronisierung läuft im Hintergrund; der Lightroom-Sensor zeigt das Ergebnis. Zurückgehaltene Änderungen bestätigen führt die Entfernungen und Verschiebungen aus, die eine angehaltene Synchronisierung zurückgehalten hat.",
+        "data": {
+          "confirm": "Zurückgehaltene Änderungen bestätigen"
+        }
+      },
+      "lightroom_settings": {
+        "title": "Lightroom-Einstellungen",
+        "description": "Eine Änderung des Fotoordners oder des Unterordners muss zuerst bestätigt werden.",
+        "data": {
+          "photo_dir": "Fotoordner",
+          "prefix": "Unterordner",
+          "interval_min": "Synchronisierungsintervall",
+          "max_edge": "Längste Kante",
+          "quality": "JPEG-Qualität",
+          "free_floor_gb": "Freier Speicher, der bleiben muss"
+        }
+      },
+      "lightroom_folder_confirm": {
+        "title": "Fotoordner ändern",
+        "description": "Die Fotos werden in {new} synchronisiert. Jedes Foto wird erneut heruntergeladen, außer der Ordner enthält bereits die Fotos dieser Bibliothek. Die Fotos in {old} bleiben, wo sie sind: Die Integration löscht sie nicht. Eine laufende Synchronisierung wird beendet. Absenden ändert den Ordner."
+      },
+      "filter": {
+        "title": "Filter",
+        "description": "Ein Foto wird synchronisiert, wenn es jede hier gesetzte Bedingung erfüllt. Ein leeres Feld setzt keine Bedingung. Weiter zeigt, was sich ändern würde, bevor etwas gespeichert wird.",
+        "data": {
+          "ratings": "Bewertungen",
+          "flag": "Markierung",
+          "albums_include": "Nur diese Alben",
+          "albums_exclude": "Nie diese Alben",
+          "include_unfiled": "Fotos in keinem Album",
+          "captured_from": "Aufgenommen ab",
+          "captured_to": "Aufgenommen bis",
+          "captured_last_years": "Aufgenommen in den letzten Jahren",
+          "edited_only": "Nur bearbeitete Fotos",
+          "equipment_include": "Kamera oder Objektiv enthält",
+          "equipment_exclude": "Kamera oder Objektiv enthält nicht"
+        },
+        "data_description": {
+          "albums_include": "Leer: alle Alben. Ein Set schließt jedes Album darunter ein.",
+          "albums_exclude": "Hat Vorrang vor den Alben oben. Ein Foto, dessen Alben alle ausgeschlossen sind, wird nicht synchronisiert.",
+          "include_unfiled": "Fotos in keinem Album kommen in einen Ordner pro Monat.",
+          "captured_last_years": "1 bis 50; ersetzt die Daten oben, wenn gesetzt.",
+          "equipment_include": "Durch Kommas getrennt; passt auf einen Teil von Hersteller, Modell oder Objektiv, ohne Groß-/Kleinschreibung.",
+          "equipment_exclude": "Durch Kommas getrennt; passt auf einen Teil von Hersteller, Modell oder Objektiv, ohne Groß-/Kleinschreibung."
+        }
+      },
+      "filter_preview": {
+        "title": "Vorschau",
+        "description": "Nach der am {cache_date} gelesenen Bibliothek würde die nächste Synchronisierung {kept} Fotos behalten, {add} hinzufügen, {remove} entfernen und {move} verschieben. Sicherheitsstopp: {hold} (wenn gesetzt, wartet die Synchronisierung vor jedem Entfernen oder Verschieben auf Jetzt synchronisieren mit Zurückgehaltene Änderungen bestätigen).\n\nOrdner mit den meisten Änderungen:\n{top}",
+        "menu_options": {
+          "save": "Speichern",
+          "filter": "Zurück zum Filter"
+        }
+      },
+      "filter_no_library": {
+        "title": "Vorschau",
+        "description": "Es wurde noch keine Bibliothek gelesen, daher kann nichts gezählt werden. Speichern übernimmt den Filter, und die folgende Synchronisierung liest die Bibliothek.",
+        "menu_options": {
+          "save": "Speichern",
+          "filter": "Zurück zum Filter"
+        }
+      },
+      "filter_no_folder": {
+        "title": "Vorschau",
+        "description": "Der Fotoordner fehlt (zum Beispiel, weil sein Speicher nicht eingebunden ist), daher kann nichts gezählt werden, und die Synchronisierung würde nicht laufen. Speichern übernimmt den Filter trotzdem.",
+        "menu_options": {
+          "save": "Speichern",
+          "filter": "Zurück zum Filter"
+        }
       }
     },
     "error": {
@@ -76,7 +200,12 @@
       "invalid_host_map": "Jede Zeile muss `von -> nach` lauten, beide Seiten nur ein Ursprung: http oder https, Host und optional Port, ohne Pfad, Abfrage, abschliessenden Schrägstrich oder Benutzernamen.",
       "album_busy": "Dieses Album wird gerade synchronisiert. Versuchen Sie es nach Abschluss erneut.",
       "unknown_album": "Dieses Album existiert nicht mehr.",
-      "share_error": "Die erste Synchronisierung dieses Albums ist fehlgeschlagen. Prüfen Sie den Link, den Fotoordner und den freien Speicherplatz und versuchen Sie es erneut."
+      "share_error": "Die erste Synchronisierung dieses Albums ist fehlgeschlagen. Prüfen Sie den Link, den Fotoordner und den freien Speicherplatz und versuchen Sie es erneut.",
+      "invalid_years": "Geben Sie eine ganze Zahl von 1 bis 50 ein oder lassen Sie das Feld leer.",
+      "invalid_range": "Dieses Datum liegt vor dem Anfangsdatum.",
+      "ratings_empty": "Wählen Sie mindestens eine Bewertung.",
+      "invalid_photo_dir": "Geben Sie den absoluten Pfad eines vorhandenen Ordners ein, zum Beispiel /config/www/ramka.",
+      "invalid_prefix": "Geben Sie einen Ordner innerhalb des Fotoordners ohne ..-Teile an oder lassen Sie das Feld leer."
     },
     "abort": {
       "not_loaded": "DomoSenso Photos ist nicht geladen. Laden Sie die Integration neu und versuchen Sie es erneut.",
@@ -91,6 +220,22 @@
     "album_path_collision": {
       "title": "Album {name} liegt in einem anderen Ordner",
       "description": "Der vorgesehene Ordner für das Album {name} gehört bereits zu etwas anderem, daher liegt das Album in {path}. Benennen Sie den anderen Ordner um, verschieben Sie ihn oder legen Sie einen Ordner für dieses Album fest, wenn es woanders liegen soll."
+    },
+    "lightroom_awaiting_confirmation": {
+      "title": "{title} wartet auf Bestätigung",
+      "description": "Die letzte Synchronisierung von {title} hat wegen eines Sicherheitsstopps ({reason}) nichts entfernt und nichts verschoben: mass_remove heißt, mehr als die Hälfte der synchronisierten Fotos würde entfernt, mass_unfile, mehr als die Hälfte käme in Monatsordner, empty_library, dass Adobe keine Fotos aufgelistet hat. Neue Fotos wurden trotzdem hinzugefügt. Ist das gewollt, verwenden Sie Konfigurieren, Jetzt synchronisieren mit Zurückgehaltene Änderungen bestätigen, oder die Aktion domosenso_photos.lightroom_sync mit confirm."
+    },
+    "lightroom_path_collision": {
+      "title": "{title}: Ordner haben einen anderen Namen erhalten",
+      "description": "Der gewünschte Ordnername war bereits von einem anderen Ordner belegt, daher haben {count} Ordner eine Nummer erhalten. Ihre Pfade stehen im Attribut path_collisions von {entity}. Benennen Sie den anderen Ordner um oder verschieben Sie ihn, wenn Sie den einfachen Namen möchten; die nächste Synchronisierung benennt diese dann um."
+    },
+    "lightroom_ambiguous_folders": {
+      "title": "{title}: kopierte Ordner bleiben unverändert",
+      "description": "Mehr als ein Ordner trägt die Synchronisierungsmarkierung desselben Albums, daher wird keiner dieser {count} Ordner geändert. Ihre Pfade stehen im Attribut ambiguous_folders von {entity}. Löschen Sie die Kopie oder die Datei .sync.json in der Kopie, damit die Synchronisierung weiterläuft."
+    },
+    "lightroom_signin_expiring": {
+      "title": "{title}: Adobe-Anmeldung endet bald",
+      "description": "Die Adobe-Anmeldung von {title} endet am {expires}. Sie wird normalerweise durch die Synchronisierungen erneuert; wenn nicht, fordert Home Assistant Sie zur erneuten Anmeldung auf, sobald Adobe sie ablehnt."
     }
   },
   "services": {
@@ -131,6 +276,30 @@
           "description": "Fotos löschen, die eine zurückgehaltene Synchronisierung behalten hat, weil mehr als die Hälfte verschwunden war."
         }
       }
+    },
+    "lightroom_sync": {
+      "name": "Lightroom synchronisieren",
+      "description": "Synchronisiert eine oder alle Lightroom-Bibliotheken jetzt und gibt ihren Zustand zurück.",
+      "fields": {
+        "entry_id": {
+          "name": "Bibliothek",
+          "description": "Konfigurationseintrags-ID der Lightroom-Bibliothek; leer synchronisiert alle."
+        },
+        "confirm": {
+          "name": "Zurückgehaltene Änderungen bestätigen",
+          "description": "Die Entfernungen und Verschiebungen ausführen, die eine angehaltene Synchronisierung zurückgehalten hat."
+        }
+      }
+    },
+    "lightroom_preview": {
+      "name": "Lightroom-Vorschau",
+      "description": "Zählt anhand der zwischengespeicherten Bibliothek, was eine Synchronisierung mit dem aktuellen Filter behalten, hinzufügen, entfernen und verschieben würde. Stellt keine Anfrage an Adobe.",
+      "fields": {
+        "entry_id": {
+          "name": "Bibliothek",
+          "description": "Konfigurationseintrags-ID der Lightroom-Bibliothek; leer zeigt alle."
+        }
+      }
     }
   },
   "exceptions": {
@@ -142,6 +311,28 @@
     },
     "unknown_album": {
       "message": "Unbekannte Album-ID."
+    },
+    "unknown_library": {
+      "message": "Keine geladene Lightroom-Bibliothek hat diese Eintrags-ID."
+    }
+  },
+  "selector": {
+    "rating": {
+      "options": {
+        "0": "Ohne Bewertung",
+        "1": "1 Stern",
+        "2": "2 Sterne",
+        "3": "3 Sterne",
+        "4": "4 Sterne",
+        "5": "5 Sterne"
+      }
+    },
+    "flag": {
+      "options": {
+        "any": "Beliebig",
+        "not_rejected": "Nicht abgelehnt",
+        "picks_only": "Nur ausgewählte"
+      }
     }
   }
 }

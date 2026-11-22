@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+from collections.abc import Callable
 
 from PIL import Image
 
@@ -36,11 +37,22 @@ def _register_heif() -> None:
     _heif_ready = True
 
 
-def normalize(data: bytes, max_edge: int, quality: int) -> bytes:
+def normalize(data: bytes, max_edge: int, quality: int,
+              add_exif: Callable[[Image.Exif], None] | None = None, keep_source_exif: bool = True) -> bytes:
+    """keep_source_exif=False starts from an EXIF holding only the source's orientation, so nothing but
+    add_exif's tags is written (a rendition may carry the original's serial numbers and MakerNote)."""
     if is_heif(data):
         _register_heif()
     with Image.open(io.BytesIO(data)) as src:
         exif = src.getexif()
+        if not keep_source_exif:
+            orientation, exif = exif.get(ORIENTATION), Image.Exif()
+            if orientation is not None:
+                exif[ORIENTATION] = orientation
+        if add_exif is not None:
+            add_exif(exif)  # before the orientation reset and the GPS removal
+        # a profile describes the source's colour space: only an RGB source keeps it
+        icc = src.info.get('icc_profile') if src.mode == 'RGB' else None
         if src.format == 'JPEG':
             src.draft('RGB', (max_edge, max_edge))  # decode at a reduced scale: tablet memory
         img = src if src.mode == 'RGB' else src.convert('RGB')
@@ -49,11 +61,12 @@ def normalize(data: bytes, max_edge: int, quality: int) -> bytes:
         if img is src:
             img = src.copy()  # the source is closed when the block ends
     out = io.BytesIO()
+    extra = {'icc_profile': icc} if icc else {}
     for candidate in _exif_candidates(exif):
         out.seek(0)
         out.truncate()
         try:
-            img.save(out, format='JPEG', quality=quality, **candidate)
+            img.save(out, format='JPEG', quality=quality, **candidate, **extra)
         except ValueError:  # EXIF does not fit in one APP1 segment
             continue
         return out.getvalue()
